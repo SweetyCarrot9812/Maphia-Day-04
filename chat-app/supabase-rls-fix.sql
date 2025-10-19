@@ -215,6 +215,16 @@ ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE message_likes ENABLE ROW LEVEL SECURITY;
 
 -- ============================================================================
+-- 함수 권한 부여
+-- ============================================================================
+
+-- get_rooms_with_metadata 함수에 실행 권한 부여
+GRANT EXECUTE ON FUNCTION public.get_rooms_with_metadata() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_rooms_with_metadata() TO anon;
+
+-- handle_new_user 함수는 SECURITY DEFINER이므로 별도 권한 불필요
+
+-- ============================================================================
 -- 완료
 -- ============================================================================
 

@@ -10,13 +10,27 @@ export async function fetchRooms(dispatch: Dispatch<RoomsAction>): Promise<void>
   dispatch({ type: 'FETCH_ROOMS_LOADING' })
 
   try {
-    const { data, error } = await supabase.rpc('get_rooms_with_metadata')
+    // Fetch all chat rooms directly (bypass function)
+    const { data: rooms, error: roomsError } = await supabase
+      .from('chat_rooms')
+      .select('*')
+      .order('created_at', { ascending: false })
 
-    if (error) throw error
+    if (roomsError) throw roomsError
+
+    // Transform to ChatRoom format
+    const roomsWithMetadata: ChatRoom[] = (rooms || []).map(room => ({
+      id: room.id,
+      name: room.name,
+      description: room.description,
+      created_by: room.created_by,
+      created_at: room.created_at,
+      member_count: 0 // Basic implementation
+    }))
 
     dispatch({
       type: 'SET_ROOMS',
-      payload: data as ChatRoom[]
+      payload: roomsWithMetadata
     })
   } catch (error) {
     dispatch({
@@ -53,21 +67,34 @@ export async function createRoom(
   })
 
   try {
-    const { data, error } = await supabase
+    // Create chat room
+    const { data: roomData, error: roomError } = await supabase
       .from('chat_rooms')
       .insert({ name, description })
       .select()
       .single()
 
-    if (error) throw error
+    if (roomError) throw roomError
+
+    // Add creator as member
+    const { error: memberError } = await supabase
+      .from('room_members')
+      .insert({ room_id: roomData.id })
+
+    // Ignore duplicate key error (already a member), but throw other errors
+    if (memberError && !memberError.message.includes('duplicate')) {
+      // Rollback: delete the room if adding member fails
+      await supabase.from('chat_rooms').delete().eq('id', roomData.id)
+      throw memberError
+    }
 
     // Replace optimistic with real data
     dispatch({
       type: 'REPLACE_ROOM',
-      payload: { tempId, room: data as ChatRoom }
+      payload: { tempId, room: roomData as ChatRoom }
     })
 
-    return data as ChatRoom
+    return roomData as ChatRoom
   } catch (error) {
     // Remove optimistic room
     dispatch({ type: 'REMOVE_ROOM', payload: tempId })
