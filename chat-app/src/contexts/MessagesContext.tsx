@@ -35,7 +35,8 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
         type,
         state.replyTarget?.id || null,
         dispatch,
-        user.id
+        user.id,
+        state.replyTarget || undefined
       )
       // Clear reply target after sending
       dispatch({ type: 'CLEAR_REPLY_TARGET' })

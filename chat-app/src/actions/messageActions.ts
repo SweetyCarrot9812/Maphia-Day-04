@@ -91,7 +91,8 @@ export async function sendMessage(
   type: 'text' | 'emoji',
   parentMessageId: string | null,
   dispatch: Dispatch<MessagesAction>,
-  userId: string
+  userId: string,
+  parentMessage?: Message
 ): Promise<void> {
   const tempId = `temp-${Date.now()}`
 
@@ -106,7 +107,10 @@ export async function sendMessage(
     created_at: new Date().toISOString(),
     deleted_at: null,
     status: 'sending',
-    tempId
+    tempId,
+    author_name: 'User',
+    parent_content: parentMessage?.deleted_at ? '[Deleted message]' : parentMessage?.content,
+    parent_author: parentMessage ? 'User' : undefined
   }
 
   dispatch({
