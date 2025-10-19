@@ -17,6 +17,7 @@ export function RegisterForm() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false)
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -37,11 +38,61 @@ export function RegisterForm() {
     }
 
     setFormErrors({})
-    await register(email, password, displayName)
 
-    if (!error) {
-      router.push('/rooms')
+    try {
+      const result = await register(email, password, displayName)
+
+      if (result?.needsEmailConfirmation) {
+        // Show email confirmation message
+        setShowEmailConfirmation(true)
+      } else if (!error) {
+        // Auto-login successful, redirect to rooms
+        router.push('/rooms')
+      }
+    } catch (err) {
+      // Error already handled by authActions
+      console.error('Registration error:', err)
     }
+  }
+
+  // Show email confirmation message if needed
+  if (showEmailConfirmation) {
+    return (
+      <div className="space-y-4 text-center">
+        <div className="rounded-lg bg-blue-50 p-6 border border-blue-200">
+          <svg className="w-16 h-16 mx-auto mb-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">
+            이메일을 확인해주세요
+          </h2>
+          <p className="text-gray-600 mb-4">
+            <span className="font-semibold">{email}</span>로<br />
+            가입 확인 이메일을 발송했습니다.
+          </p>
+          <p className="text-sm text-gray-500 mb-6">
+            이메일의 확인 링크를 클릭하면 가입이 완료됩니다.
+          </p>
+          <Link
+            href="/login"
+            className="inline-block px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            로그인 페이지로 이동
+          </Link>
+        </div>
+
+        <p className="text-sm text-gray-600">
+          이메일을 받지 못하셨나요?{' '}
+          <button
+            type="button"
+            onClick={() => setShowEmailConfirmation(false)}
+            className="text-primary hover:underline"
+          >
+            다시 시도
+          </button>
+        </p>
+      </div>
+    )
   }
 
   return (

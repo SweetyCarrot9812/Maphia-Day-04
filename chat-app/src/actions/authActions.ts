@@ -56,7 +56,7 @@ export async function register(
   password: string,
   displayName: string,
   dispatch: Dispatch<AuthAction>
-): Promise<void> {
+): Promise<{ needsEmailConfirmation: boolean }> {
   dispatch({ type: 'REGISTER_LOADING' })
 
   try {
@@ -73,6 +73,23 @@ export async function register(
 
     if (authError) throw authError
     if (!authData.user) throw new Error('Registration failed')
+
+    // Check if email confirmation is required
+    const needsEmailConfirmation = authData.session === null
+
+    if (needsEmailConfirmation) {
+      // Email confirmation required - don't create profile yet
+      dispatch({
+        type: 'REGISTER_SUCCESS',
+        payload: {
+          id: authData.user.id,
+          email: authData.user.email!,
+          display_name: displayName,
+          created_at: authData.user.created_at
+        }
+      })
+      return { needsEmailConfirmation: true }
+    }
 
     // Profile created automatically by database trigger
     // Verify it exists
@@ -103,11 +120,14 @@ export async function register(
         created_at: authData.user.created_at
       }
     })
+
+    return { needsEmailConfirmation: false }
   } catch (error) {
     dispatch({
       type: 'REGISTER_ERROR',
       payload: error instanceof Error ? error.message : 'Registration failed'
     })
+    throw error
   }
 }
 
