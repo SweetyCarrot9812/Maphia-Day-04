@@ -28,7 +28,9 @@ export async function login(
       .eq('id', authData.user.id)
       .single()
 
-    if (profileError) throw profileError
+    if (profileError) {
+      console.warn('Profile not found, using default display name')
+    }
 
     // Dispatch success with merged user data
     dispatch({
@@ -36,7 +38,7 @@ export async function login(
       payload: {
         id: authData.user.id,
         email: authData.user.email!,
-        display_name: profile.display_name,
+        display_name: (profile as any)?.display_name || authData.user.email!.split('@')[0],
         created_at: authData.user.created_at
       }
     })
@@ -101,8 +103,8 @@ export async function register(
 
     if (profileError) {
       // Fallback: create profile manually if trigger failed
-      const { error: insertError } = await supabase
-        .from('user_profiles')
+      const { error: insertError } = await (supabase
+        .from('user_profiles') as any)
         .insert({
           id: authData.user.id,
           display_name: displayName
@@ -116,7 +118,7 @@ export async function register(
       payload: {
         id: authData.user.id,
         email: authData.user.email!,
-        display_name: profile?.display_name || displayName,
+        display_name: (profile as any)?.display_name || displayName,
         created_at: authData.user.created_at
       }
     })
@@ -171,7 +173,7 @@ export async function refreshSession(dispatch: Dispatch<AuthAction>): Promise<vo
         payload: {
           id: user.id,
           email: user.email!,
-          display_name: profile?.display_name || 'User',
+          display_name: (profile as any)?.display_name || 'User',
           created_at: user.created_at
         }
       })

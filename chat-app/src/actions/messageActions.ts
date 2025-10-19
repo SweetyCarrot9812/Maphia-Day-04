@@ -16,8 +16,8 @@ export async function fetchMessages(
   }
 
   try {
-    let query = supabase
-      .from('messages')
+    let query = (supabase
+      .from('messages') as any)
       .select('*')
       .eq('room_id', roomId)
       .order('created_at', { ascending: true })
@@ -42,12 +42,12 @@ export async function fetchMessages(
 
     // Fetch user profiles separately for now
     // TODO: Fix foreign key relationship to enable proper join
-    const messages = (data || []).map(msg => {
+    const messages = (data || []).map((msg: any) => {
       // Find parent message content if this is a reply
       let parent_content = null
       let parent_author = null
       if (msg.parent_message_id) {
-        const parentMsg = data.find(m => m.id === msg.parent_message_id)
+        const parentMsg = (data as any).find((m: any) => m.id === msg.parent_message_id)
         if (parentMsg) {
           parent_content = parentMsg.deleted_at ? '[Deleted message]' : parentMsg.content
           parent_author = 'User' // Temporary
@@ -115,8 +115,8 @@ export async function sendMessage(
   })
 
   try {
-    const { data, error } = await supabase
-      .from('messages')
+    const { data, error } = await (supabase
+      .from('messages') as any)
       .insert({
         room_id: roomId,
         content,
@@ -157,8 +157,8 @@ export async function deleteMessage(
   dispatch: Dispatch<MessagesAction>
 ): Promise<void> {
   try {
-    const { error } = await supabase
-      .from('messages')
+    const { error } = await (supabase
+      .from('messages') as any)
       .update({ deleted_at: new Date().toISOString() })
       .eq('id', messageId)
 
@@ -191,8 +191,8 @@ export async function likeMessage(
   })
 
   try {
-    const { error } = await supabase
-      .from('message_likes')
+    const { error } = await (supabase
+      .from('message_likes') as any)
       .insert({ message_id: messageId, user_id: userId })
 
     if (error) throw error
@@ -220,8 +220,8 @@ export async function unlikeMessage(
   })
 
   try {
-    const { error } = await supabase
-      .from('message_likes')
+    const { error } = await (supabase
+      .from('message_likes') as any)
       .delete()
       .eq('message_id', messageId)
       .eq('user_id', userId)
@@ -271,20 +271,20 @@ async function fetchLikesForMessages(
 
   if (messageIds.length === 0) return
 
-  const { data } = await supabase
-    .from('message_likes')
+  const { data } = await (supabase
+    .from('message_likes') as any)
     .select('*')
     .in('message_id', messageIds)
 
   if (data) {
-    const likesByMessage = data.reduce((acc, like) => {
+    const likesByMessage = data.reduce((acc: any, like: any) => {
       if (!acc[like.message_id]) acc[like.message_id] = []
       acc[like.message_id].push(like)
       return acc
-    }, {} as Record<string, MessageLike[]>)
+    }, {} as Record<string, any[]>)
 
-    Object.entries(likesByMessage).forEach(([messageId, likes]) => {
-      dispatch({ type: 'UPDATE_LIKES', payload: { messageId, likes } })
+    Object.entries(likesByMessage).forEach(([messageId, likes]: [string, any]) => {
+      dispatch({ type: 'UPDATE_LIKES', payload: { messageId, likes: likes as any[] } })
     })
   }
 }

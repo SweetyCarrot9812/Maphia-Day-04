@@ -19,7 +19,7 @@ export async function fetchRooms(dispatch: Dispatch<RoomsAction>): Promise<void>
     if (roomsError) throw roomsError
 
     // Transform to ChatRoom format
-    const roomsWithMetadata: ChatRoom[] = (rooms || []).map(room => ({
+    const roomsWithMetadata: ChatRoom[] = (rooms || []).map((room: any) => ({
       id: room.id,
       name: room.name,
       description: room.description,
@@ -68,8 +68,8 @@ export async function createRoom(
 
   try {
     // Create chat room
-    const { data: roomData, error: roomError } = await supabase
-      .from('chat_rooms')
+    const { data: roomData, error: roomError } = await (supabase
+      .from('chat_rooms') as any)
       .insert({ name, description })
       .select()
       .single()
